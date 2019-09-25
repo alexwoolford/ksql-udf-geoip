@@ -1,0 +1,26 @@
+---
+# deploy.yml
+
+- hosts: ksql
+  user: root
+
+  tasks:
+    - name: rebuild project
+      local_action: shell mvn clean package chdir=/Users/alex.woolford/ksql-udf-geoip
+
+    - name: stop ksql
+      service: name=confluent-ksql
+        state=stopped
+
+    - name: copy jar to ksql instances
+      copy:
+        src: /Users/alex.woolford/ksql-udf-geoip/target/ksql-udf-geoip-1.0-SNAPSHOT-jar-with-dependencies.jar
+        dest: /opt/ksql-extension/
+        owner: cp-ksql
+        group: confluent
+        mode: 0755
+        force: yes
+
+    - name: start ksql
+      service: name=confluent-ksql
+        state=started
