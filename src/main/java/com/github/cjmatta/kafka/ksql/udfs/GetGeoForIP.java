@@ -1,15 +1,17 @@
 package com.github.cjmatta.kafka.ksql.udfs;
 
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.record.City;
+import com.maxmind.geoip2.record.Country;
 import com.maxmind.geoip2.record.Location;
-import io.confluent.common.Configurable;
-import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.Configurable;
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
 import io.confluent.ksql.function.udf.UdfParameter;
 import io.confluent.ksql.util.KsqlConfig;
+import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,23 +63,73 @@ public class GetGeoForIP implements Configurable {
             return null;
         }
 
+        return geoenrich(ip);
+
+    }
+
+    public String geoenrich(String ip) {
+
+        LocationRecord locationRecord = new LocationRecord();
+
+        City city;
         try {
-            log.debug("Lookup lat/lon for IP: " + ip);
-            InetAddress ipAddress = InetAddress.getByName(ip);
-            Location response = reader.city(ipAddress).getLocation();
-
-            JsonObject location = new JsonObject();
-            location.addProperty("lat", reader.city(ipAddress).getLocation().getLatitude());
-            location.addProperty("lon", reader.city(ipAddress).getLocation().getLongitude());
-
-            JsonObject result = new JsonObject();
-            result.add("location", location);
-
-            return result.toString();
-        } catch (IOException | GeoIp2Exception e) {
-            log.error("Error looking up lat/lon for IP: " + e);
-            return null;
+            city = reader.city(InetAddress.getByName(ip)).getCity();
+        } catch (Exception e) {
+            city = null;
         }
+
+        if (city != null){
+            locationRecord.setCity(city.getName());
+        }
+
+        Country country;
+        try {
+            country = reader.city(InetAddress.getByName(ip)).getCountry();
+        } catch (Exception e) {
+            country = null;
+        }
+
+        if (country != null){
+            locationRecord.setCountry(country.getName());
+        }
+
+        String subdivision;
+        try {
+            subdivision = reader.city(InetAddress.getByName(ip)).getSubdivisions().get(0).getName();
+        } catch (Exception e) {
+            subdivision = null;
+        }
+
+        if (subdivision != null){
+            locationRecord.setSubdivision(subdivision);
+        }
+
+        Location location;
+        try {
+            location = reader.city(InetAddress.getByName(ip)).getLocation();
+        } catch (Exception e) {
+            location = null;
+        }
+
+        if (location != null){
+            LatLonRecord latLonRecord = new LatLonRecord();
+            latLonRecord.setLat(location.getLatitude());
+            latLonRecord.setLon(location.getLongitude());
+
+            locationRecord.setLatLonRecord(latLonRecord);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        String json = null;
+        try {
+            json = mapper.writeValueAsString(locationRecord);
+        } catch (JsonProcessingException e) {
+            log.error(e.getStackTrace().toString());
+        }
+
+        return json;
+
     }
 
 }
