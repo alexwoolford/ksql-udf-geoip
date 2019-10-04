@@ -6,7 +6,7 @@
 
   tasks:
     - name: rebuild project
-      local_action: shell mvn clean package chdir=/Users/alex.woolford/ksql-udf-geoip
+      local_action: shell mvn clean package -DskipTests chdir=/Users/alex.woolford/ksql-udf-geoip
 
     - name: stop ksql
       service: name=confluent-ksql

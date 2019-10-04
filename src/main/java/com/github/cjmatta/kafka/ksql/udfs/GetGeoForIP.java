@@ -1,135 +1,95 @@
 package com.github.cjmatta.kafka.ksql.udfs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.DatabaseReader.Builder;
 import com.maxmind.geoip2.record.City;
 import com.maxmind.geoip2.record.Country;
 import com.maxmind.geoip2.record.Location;
-import org.apache.kafka.common.Configurable;
+import com.maxmind.geoip2.record.Subdivision;
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
 import io.confluent.ksql.function.udf.UdfParameter;
-import io.confluent.ksql.util.KsqlConfig;
-import org.apache.kafka.common.config.ConfigException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
+import org.apache.kafka.common.Configurable;
+import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @UdfDescription(
         name = "getgeoforip",
-        description = "Function to lookup ip -> geo information ")
+        description = "Function to lookup ip -> geo information "
+)
 public class GetGeoForIP implements Configurable {
-
     private DatabaseReader reader;
     private Logger log = LoggerFactory.getLogger(GetGeoForIP.class);
 
-    @Override
-    public void configure(final Map<String, ?> props) {
+    public GetGeoForIP() {
+    }
 
-        log.info("Configure run");
-
-        String KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG = KsqlConfig.KSQL_FUNCTIONS_PROPERTY_PREFIX + "getgeoforip.geocity.db.path";
-
+    public void configure(Map<String, ?> props) {
+        String KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG = "ksql.functions.getgeoforip.geocity.db.path";
         if (!props.containsKey(KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG)) {
             throw new ConfigException("Required property " + KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG + " not found!");
-        }
+        } else {
+            String geoCityDbPath = (String)props.get(KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG);
 
-        File database;
-        final String geoCityDbPath = (String) props.get(KSQL_FUNCTIONS_GETGEOFORIP_GEOCITY_DB_PATH_CONFIG);
-
-        try {
-            database = new File(geoCityDbPath);
-            reader = new DatabaseReader.Builder(database).build();
-            log.info("loaded GeoIP database from " + geoCityDbPath.toString());
-        } catch (IOException e) {
-            log.error("Problem loading GeoIP database: " + e);
-            throw new ExceptionInInitializerError(e);
+            try {
+                File database = new File(geoCityDbPath);
+                this.reader = (new Builder(database)).build();
+                this.log.info("loaded GeoIP database from " + geoCityDbPath.toString());
+            } catch (IOException var6) {
+                this.log.error("Problem loading GeoIP database: " + var6);
+                throw new ExceptionInInitializerError(var6);
+            }
         }
     }
 
     @Udf(description = "returns lat/lon from IP input")
-    public String getgeoforip(
-            @UdfParameter(value = "ip", description = "the IP address to lookup in the geoip database") String ip
-    ) {
-
-        log.info("**** in UDF ****");
-
-        if (ip == null || ip.equals("")) {
-            return null;
-        }
-
-        return geoenrich(ip);
-
-    }
-
-    public String geoenrich(String ip) {
-
-        LocationRecord locationRecord = new LocationRecord();
+    public Struct getgeoforip(@UdfParameter(value = "ip", description = "the IP address to lookup in the geoip database", schema="STRUCT<city VARCHAR, country VARCHAR, subdivision VARCHAR, STRUCT<location STRUCT<longitude DOUBLE, latitude DOUBLE>>>") String ip) {
 
         City city;
         try {
-            city = reader.city(InetAddress.getByName(ip)).getCity();
-        } catch (Exception e) {
+            city = this.reader.city(InetAddress.getByName(ip)).getCity();
+        } catch (Exception var13) {
             city = null;
-        }
-
-        if (city != null){
-            locationRecord.setCity(city.getName());
         }
 
         Country country;
         try {
-            country = reader.city(InetAddress.getByName(ip)).getCountry();
-        } catch (Exception e) {
+            country = this.reader.city(InetAddress.getByName(ip)).getCountry();
+        } catch (Exception var12) {
             country = null;
-        }
-
-        if (country != null){
-            locationRecord.setCountry(country.getName());
         }
 
         String subdivision;
         try {
-            subdivision = reader.city(InetAddress.getByName(ip)).getSubdivisions().get(0).getName();
-        } catch (Exception e) {
+            subdivision = ((Subdivision)this.reader.city(InetAddress.getByName(ip)).getSubdivisions().get(0)).getName();
+        } catch (Exception var11) {
             subdivision = null;
-        }
-
-        if (subdivision != null){
-            locationRecord.setSubdivision(subdivision);
         }
 
         Location location;
         try {
-            location = reader.city(InetAddress.getByName(ip)).getLocation();
-        } catch (Exception e) {
+            location = this.reader.city(InetAddress.getByName(ip)).getLocation();
+        } catch (Exception var10) {
             location = null;
         }
 
-        if (location != null){
-            LatLonRecord latLonRecord = new LatLonRecord();
-            latLonRecord.setLat(location.getLatitude());
-            latLonRecord.setLon(location.getLongitude());
-
-            locationRecord.setLatLonRecord(latLonRecord);
+        Schema latLonSchema = SchemaBuilder.struct().name("location").field("longitude", Schema.OPTIONAL_FLOAT64_SCHEMA).field("latitude", Schema.OPTIONAL_FLOAT64_SCHEMA).build();
+        Struct latlon = null;
+        if (location != null) {
+            latlon = (new Struct(latLonSchema)).put("longitude", location.getLongitude()).put("latitude", location.getLatitude());
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-
-        String json = null;
-        try {
-            json = mapper.writeValueAsString(locationRecord);
-        } catch (JsonProcessingException e) {
-            log.error(e.getStackTrace().toString());
-        }
-
-        return json;
-
+        Schema geoipLocationSchema = SchemaBuilder.struct().name("geolocation").field("city", Schema.OPTIONAL_STRING_SCHEMA).field("country", Schema.OPTIONAL_STRING_SCHEMA).field("subdivision", Schema.OPTIONAL_STRING_SCHEMA).field("location", latlon.schema()).build();
+        Struct result = (new Struct(geoipLocationSchema)).put("city", city.getName()).put("country", country.getName()).put("subdivision", subdivision).put("location", latlon);
+        return result;
     }
 
 }
