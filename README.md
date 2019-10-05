@@ -16,13 +16,18 @@ and move the jar `target/ksql-udf-geoip-1.0-SNAPSHOT-jar-with-dependencies.jar` 
 
 ### Usage
 ```sql
-ksql> select ip, getgeoforip(ip) as geo from SYSLOG;
+ksql> select ip, getgeoforip(ip) as geo from WEBLOG;
 
-64.26.151.36 | {"city":"Ottawa","country":"Canada","subdivision":"Ontario","location":{"lat":45.3548,"lon":-75.5773}}
-66.117.56.37 | {"city":"Ashburn","country":"United States","subdivision":"Virginia","location":{"lat":39.0127,"lon":-77.5342}}
-173.243.138.195 | {"city":null,"country":"United States","subdivision":null,"location":{"lat":37.751,"lon":-97.822}}
-65.210.95.239 | {"city":"Rockville","country":"United States","subdivision":"Maryland","location":{"lat":39.0828,"lon":-77.1674}}
-209.222.147.36 | {"city":"Ottawa","country":"United States","subdivision":"Illinois","location":{"lat":41.3526,"lon":-88.8416}}
-96.45.33.64 | {"city":"Sunnyvale","country":"United States","subdivision":"California","location":{"lat":37.3773,"lon":-122.0194}}
-66.117.56.42 | {"city":"Ashburn","country":"United States","subdivision":"Virginia","location":{"lat":39.0127,"lon":-77.5342}}
+17.134.127.249 | {city=null, country=United States, subdivision=null, location={longitude=-97.822, latitude=37.751}}
+35.161.94.40 | {city=Boardman, country=United States, subdivision=Oregon, location={longitude=-119.7143, latitude=45.8491}}
+209.115.181.108 | {city=Edmonton, country=Canada, subdivision=Alberta, location={longitude=-113.4178, latitude=53.4154}}
+35.161.94.40 | {city=Boardman, country=United States, subdivision=Oregon, location={longitude=-119.7143, latitude=45.8491}}
+35.161.94.40 | {city=Boardman, country=United States, subdivision=Oregon, location={longitude=-119.7143, latitude=45.8491}}
+52.25.172.95 | {city=Boardman, country=United States, subdivision=Oregon, location={longitude=-119.7143, latitude=45.8491}}
+13.33.252.119 | {city=Seattle, country=United States, subdivision=Washington, location={longitude=-122.3451, latitude=47.6348}}
+17.134.127.250 | {city=null, country=United States, subdivision=null, location={longitude=-97.822, latitude=37.751}}
+74.125.124.189 | {city=Mountain View, country=United States, subdivision=California, location={longitude=-122.0748, latitude=37.4043}}
+52.37.243.173 | {city=Boardman, country=United States, subdivision=Oregon, location={longitude=-119.7143, latitude=45.8491}}
+193.29.63.150 | {city=null, country=Germany, subdivision=null, location={longitude=9.491, latitude=51.2993}}
+
 ```
