@@ -90,8 +90,12 @@ public class GeoipLookup implements Configurable {
             latlon = new Struct(geoSchema.getLatLonSchema())
                     .put("longitude", location.getLongitude())
                     .put("latitude", location.getLatitude());
-            geolocation.put("location", latlon);
+        } else {
+            latlon = new Struct(geoSchema.getLatLonSchema())
+                    .put("longitude", null)
+                    .put("latitude", null);
         }
+        geolocation.put("location", latlon);
 
         return geolocation;
     }

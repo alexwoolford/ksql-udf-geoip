@@ -43,13 +43,19 @@ public class GeoipLookupTest {
 
   @Test
   public void geoipLookupNullIPTest() {
-    assertThat(udf.getgeoforip(null), hasToString("Struct{}"));
+    assertThat(udf.getgeoforip(null), hasToString("Struct{location=Struct{}}"));
   }
 
   @Test
   public void geoipLookupNotIPAddressTest() {
-    assertThat(udf.getgeoforip("not an IP address"), hasToString("Struct{}"));
+    assertThat(udf.getgeoforip("not an IP address"), hasToString("Struct{location=Struct{}}"));
   }
+
+  @Test
+  public void geoipLookupPrivateIPAddressTest() {
+    assertThat(udf.getgeoforip("10.0.1.14"), hasToString("Struct{location=Struct{}}"));
+  }
+
 
   private void configure(String mmdbPath) {
     Map<String, String> config = new HashMap<String, String>();

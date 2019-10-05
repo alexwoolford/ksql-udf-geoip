@@ -4,3 +4,5 @@
 target/
 
 *.mmdb
+
+.DS_Store
