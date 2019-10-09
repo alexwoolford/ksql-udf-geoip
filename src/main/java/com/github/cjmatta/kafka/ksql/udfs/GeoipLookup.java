@@ -45,7 +45,7 @@ public class GeoipLookup implements Configurable {
     }
 
     @Udf(description = "returns geolocation for an IP address",
-            schema = "STRUCT<city VARCHAR, country VARCHAR, subdivision VARCHAR, location STRUCT<longitude DOUBLE, latitude DOUBLE>>")
+            schema = "STRUCT<CITY VARCHAR, COUNTRY VARCHAR, SUBDIVISION VARCHAR, LOCATION STRUCT<LON DOUBLE, LAT DOUBLE>>")
 
     public Struct getgeoforip(@UdfParameter(
             value = "ip",
@@ -81,21 +81,21 @@ public class GeoipLookup implements Configurable {
 
         GeoSchema geoSchema = new GeoSchema();
         Struct geolocation = new Struct(geoSchema.getGeoipLocationSchema())
-                .put("city", city)
-                .put("country", country)
-                .put("subdivision", subdivision);
+                .put("CITY", city)
+                .put("COUNTRY", country)
+                .put("SUBDIVISION", subdivision);
 
         Struct latlon;
         if (location != null) {
             latlon = new Struct(geoSchema.getLatLonSchema())
-                    .put("longitude", location.getLongitude())
-                    .put("latitude", location.getLatitude());
+                    .put("LON", location.getLongitude())
+                    .put("LAT", location.getLatitude());
         } else {
             latlon = new Struct(geoSchema.getLatLonSchema())
-                    .put("longitude", null)
-                    .put("latitude", null);
+                    .put("LON", null)
+                    .put("LAT", null);
         }
-        geolocation.put("location", latlon);
+        geolocation.put("LOCATION", latlon);
 
         return geolocation;
     }

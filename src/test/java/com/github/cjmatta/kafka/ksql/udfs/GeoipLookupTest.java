@@ -28,14 +28,14 @@ public class GeoipLookupTest {
     GeoSchema geoSchema = new GeoSchema();
 
     Struct latlon = new Struct(geoSchema.getLatLonSchema())
-              .put("longitude", 121.8523)
-              .put("latitude", 25.0798);
+              .put("LON", 121.8523)
+              .put("LAT", 25.0798);
 
     Struct geolocation = new Struct(geoSchema.getGeoipLocationSchema())
-              .put("city", "Dingfu")
-              .put("country", "Taiwan")
-              .put("subdivision", "New Taipei")
-              .put("location", latlon);
+              .put("CITY", "Dingfu")
+              .put("COUNTRY", "Taiwan")
+              .put("SUBDIVISION", "New Taipei")
+              .put("LOCATION", latlon);
 
     assertThat(udf.getgeoforip("49.217.88.22"), hasToString(geolocation.toString()));
 
@@ -43,17 +43,17 @@ public class GeoipLookupTest {
 
   @Test
   public void geoipLookupNullIPTest() {
-    assertThat(udf.getgeoforip(null), hasToString("Struct{location=Struct{}}"));
+    assertThat(udf.getgeoforip(null), hasToString("Struct{LOCATION=Struct{}}"));
   }
 
   @Test
   public void geoipLookupNotIPAddressTest() {
-    assertThat(udf.getgeoforip("not an IP address"), hasToString("Struct{location=Struct{}}"));
+    assertThat(udf.getgeoforip("not an IP address"), hasToString("Struct{LOCATION=Struct{}}"));
   }
 
   @Test
   public void geoipLookupPrivateIPAddressTest() {
-    assertThat(udf.getgeoforip("10.0.1.14"), hasToString("Struct{location=Struct{}}"));
+    assertThat(udf.getgeoforip("10.0.1.14"), hasToString("Struct{LOCATION=Struct{}}"));
   }
 
 

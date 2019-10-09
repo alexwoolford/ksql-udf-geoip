@@ -8,9 +8,9 @@ public class GeoSchema {
     public Schema getLatLonSchema(){
 
         Schema latLonSchema = SchemaBuilder.struct()
-                .name("location")
-                .field("longitude", Schema.OPTIONAL_FLOAT64_SCHEMA)
-                .field("latitude", Schema.OPTIONAL_FLOAT64_SCHEMA)
+                .field("LON", Schema.OPTIONAL_FLOAT64_SCHEMA)
+                .field("LAT", Schema.OPTIONAL_FLOAT64_SCHEMA)
+                .optional()
                 .build();
 
         return latLonSchema;
@@ -19,11 +19,12 @@ public class GeoSchema {
     public Schema getGeoipLocationSchema(){
 
         Schema geoipLocationSchema = SchemaBuilder.struct()
-                .name("geolocation")
-                .field("city", Schema.OPTIONAL_STRING_SCHEMA)
-                .field("country", Schema.OPTIONAL_STRING_SCHEMA)
-                .field("subdivision", Schema.OPTIONAL_STRING_SCHEMA)
-                .field("location", getLatLonSchema());
+                .field("CITY", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("COUNTRY", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("SUBDIVISION", Schema.OPTIONAL_STRING_SCHEMA)
+                .field("LOCATION", getLatLonSchema())
+                .optional()
+                .build();
 
         return geoipLocationSchema;
     }
